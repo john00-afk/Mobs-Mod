@@ -217,4 +217,414 @@
   </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobs-Mod</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #06060a;
+      color: #ffffff;
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* Starfield Canvas */
+    #stars {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Main Content Container */
+    .container {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 560px;
+      text-align: center;
+    }
+
+    /* Interactive Mob Face */
+    .mob-avatar {
+      width: 112px;
+      height: 112px;
+      background: linear-gradient(145deg, #111118, #07070b);
+      border: 3px solid #ff2a4b;
+      border-radius: 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 30px rgba(255, 42, 75, 0.5), inset 0 0 15px rgba(57, 255, 20, 0.15);
+      margin-bottom: 14px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.12s ease, box-shadow 0.2s ease;
+      position: relative;
+    }
+    .mob-avatar:active {
+      transform: scale(0.9) rotate(-3deg);
+      box-shadow: 0 0 40px rgba(57, 255, 20, 0.8);
+    }
+    .mob-eyes {
+      display: flex;
+      gap: 24px;
+      margin-top: 10px;
+    }
+    .mob-eye {
+      width: 22px;
+      height: 12px;
+      background: #39ff14;
+      box-shadow: 0 0 14px #39ff14, 0 0 4px #ffffff;
+      border-radius: 3px;
+      transition: height 0.08s ease;
+    }
+    .mob-avatar.blink .mob-eye {
+      height: 2px;
+    }
+    .mob-nose-zone {
+      width: 14px;
+      height: 8px;
+      background: #232330;
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+    .mob-stripe {
+      width: 100%;
+      height: 12px;
+      background: #ff2a4b;
+      box-shadow: 0 0 12px #ff2a4b;
+      margin-top: 12px;
+    }
+    .boop-tag {
+      position: absolute;
+      top: -12px;
+      right: -18px;
+      background: #39ff14;
+      color: #050508;
+      font-weight: 900;
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 99px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: all 0.2s ease;
+      pointer-events: none;
+    }
+    .boop-tag.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    h1 {
+      font-size: 2.3rem;
+      margin: 0;
+      letter-spacing: 1.5px;
+      text-shadow: 0 0 18px rgba(255, 42, 75, 0.75);
+    }
+    .subtitle {
+      color: #9ca3af;
+      font-size: 0.9rem;
+      margin: 4px 0 20px 0;
+    }
+
+    /* Search Bar */
+    .search-box {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      margin-bottom: 22px;
+    }
+    .search-box input {
+      flex: 1;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid #2b2b38;
+      background: rgba(20, 20, 28, 0.9);
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+    }
+    .search-box input:focus {
+      border-color: #39ff14;
+      box-shadow: 0 0 14px rgba(57, 255, 20, 0.25);
+    }
+    .search-box button {
+      padding: 14px 20px;
+      border-radius: 14px;
+      border: none;
+      background: #ff2a4b;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Quick Website Grid */
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+    .site-card {
+      background: rgba(20, 20, 29, 0.85);
+      border: 1px solid #292938;
+      border-radius: 14px;
+      padding: 14px 10px;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.15s, border-color 0.2s, background 0.2s;
+    }
+    .site-card:hover {
+      transform: translateY(-3px);
+      border-color: #39ff14;
+      background: rgba(30, 30, 44, 0.95);
+    }
+    .site-icon {
+      font-size: 1.4rem;
+    }
+
+    /* Action Buttons Row */
+    .bottom-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .pill-btn {
+      background: #171722;
+      border: 1px solid #323244;
+      color: #e5e7eb;
+      padding: 10px 16px;
+      border-radius: 99px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .pill-btn:hover {
+      border-color: #ff2a4b;
+      color: #fff;
+    }
+    .ai-trigger {
+      border-color: #39ff14;
+      color: #39ff14;
+    }
+
+    /* Left Side Free Games Button & Drawer */
+    .games-tab-btn {
+      position: fixed;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      background: #ff2a4b;
+      color: #fff;
+      border: none;
+      border-radius: 0 14px 14px 0;
+      padding: 16px 10px;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      font-weight: 800;
+      letter-spacing: 1px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      box-shadow: 4px 0 20px rgba(255, 42, 75, 0.45);
+    }
+    .games-drawer {
+      position: fixed;
+      top: 0;
+      left: -320px;
+      width: 300px;
+      height: 100%;
+      background: #0e0e15;
+      border-right: 2px solid #ff2a4b;
+      z-index: 20;
+      padding: 20px;
+      transition: left 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 10px 0 35px rgba(0, 0, 0, 0.85);
+    }
+    .games-drawer.open {
+      left: 0;
+    }
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #262634;
+      padding-bottom: 10px;
+    }
+    .close-btn {
+      background: none;
+      border: none;
+      color: #9ca3af;
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+    .game-item {
+      background: #181824;
+      border: 1px solid #2d2d3d;
+      padding: 12px;
+      border-radius: 12px;
+      color: #fff;
+      text-align: left;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .game-item:hover {
+      border-color: #39ff14;
+    }
+
+    /* Fullscreen Game Overlay */
+    .game-frame-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #050508;
+      z-index: 30;
+      flex-direction: column;
+    }
+    .game-frame-modal.active {
+      display: flex;
+    }
+    .game-top-bar {
+      background: #12121a;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #2a2a38;
+    }
+    .game-frame-modal iframe {
+      flex: 1;
+      width: 100%;
+      border: none;
+    }
+
+    /* Mob AI Modal */
+    .ai-modal {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 310px;
+      max-width: calc(100vw - 40px);
+      background: #111119;
+      border: 2px solid #39ff14;
+      border-radius: 18px;
+      z-index: 25;
+      overflow: hidden;
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.9);
+      flex-direction: column;
+    }
+    .ai-modal.open {
+      display: flex;
+    }
+    .ai-header {
+      background: #181824;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      color: #39ff14;
+      font-size: 0.9rem;
+    }
+    .ai-messages {
+      height: 190px;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+    .msg-mob {
+      background: #1d1d2b;
+      padding: 8px 12px;
+      border-radius: 12px 12px 12px 2px;
+      border-left: 3px solid #39ff14;
+    }
+    .msg-user {
+      background: #ff2a4b;
+      padding: 8px 12px;
+      border-radius: 12px 12px 2px 12px;
+      align-self: flex-end;
+    }
+    .ai-input-row {
+      display: flex;
+      border-top: 1px solid #262634;
+    }
+    .ai-input-row input {
+      flex: 1;
+      background: #0d0d14;
+      border: none;
+      color: #fff;
+      padding: 10px;
+      font-size: 14px;
+      outline: none;
+    }
+    .ai-input-row button {
+      background: #39ff14;
+      color: #050508;
+      border: none;
+      padding: 0 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="stars"></canvas>
+
+  <!-- Left Side Free Games Button -->
+  <button class="games-tab-btn" onclick="toggleGames()">🎮 FREE GAMES</button>
+
+  <!-- Left Side Games Drawer -->
+  <div class="games-drawer" id="gamesDrawer">
+    <div class="drawer-header">
+      <strong style="color:#ff2a4b; font-size:1.1rem;">🎮 Free Browser Games</strong>
+      <button class="close-btn" onclick="toggleGames()">✕</button>
+    </div>
+    <p style="color:#9ca3af; font-size:0.8rem; margin:0;">Tap a game to play right inside Mobs-Mod:</p>
+    <button class="game-item" onclick="launchGame('2048', 'https://play2048.co')">🔢 2048 Classic</button>
+    <button class="game-item" onclick="launchGame('Hextris', 'https://hextris.io')">⬡ Hextris Puzzle</button>
+    <button class="game-item" onclick="launchGame('Tetris Web', 'https://github.io')">🧱 Block Stacker</button>
+    <button class="game-item" onclick="launchGame('Dino Runner', 'https://chromedino.com')">🦖 Chrome Dino</button>
+  </div>
+
+  <!-- Fullscreen Game Player -->
+  <div class="game-frame-modal" id="gameModal">
+    <div class="game-top-bar">
+      <strong id="gameTitle">Playing Game</strong>
 
